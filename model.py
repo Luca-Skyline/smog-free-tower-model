@@ -11,10 +11,10 @@ rho_a = 1.225 # air denisty (kg / m^3)
 rho_p = 600 # particle density (kg / m^3)
 vi = 1.39e-5 # air kinematic viscosity 
 g = 9.81 # acceleration of gravity, m / s^2
-q = 1.6e-19 # charge of particle, Coulombs
+q = 1.6e-14 # charge of particle, Coulombs
 A = 1.23 # cross-sectional area of chamber in m^2
 
-dt = 0.00001 # time step
+dt = 0.000001 # time step
 
 x = []
 y = []
@@ -43,8 +43,6 @@ def simulateParticles(listOfParticles):
             Fdx = -3 * vi * rho_a * math.pi * particle.diameter * urx
             Fdy = -3 * vi * rho_a * math.pi * particle.diameter * ury
             
-            print('form drag vertical:', Fdy)
-            
             # force of electric field from plate
             E = q * voltage / l
             
@@ -55,7 +53,6 @@ def simulateParticles(listOfParticles):
             ax = (Fdx + E) / particle.mass
             ay = (Fdy + Ff + W) / particle.mass
             
-            print('Acceleration vertical: ', ay)
             
             # apply Euler's method to velocity and position
             particle.velX += ax * dt
@@ -63,11 +60,9 @@ def simulateParticles(listOfParticles):
             particle.posX += particle.velX * dt
             particle.posY += particle.velY * dt
             
-            x.append(particle.posX)
-            y.append(particle.posY)
-            
-            # increment time  
-            t += dt
+            if(t % 20 == 0):
+                x.append(particle.posX)
+                y.append(particle.posY)
             
             if(particle.posX <= 0 or particle.posX >= l):
                 print('captured')
@@ -79,6 +74,9 @@ def simulateParticles(listOfParticles):
                 print(particle.velY)
                 escaped += 1
                 listOfParticles.remove(particle)
+                
+        # increment time  
+        t += 1
     
     return captured / listSize
 
@@ -100,7 +98,7 @@ def generateParticles(totParticles):
 
     # generate pm2.5 particles
     for i in range(0, numPm25):
-        p = generateSingleParticle(0, 2.5 * pow(10, -6))
+        p = generateSingleParticle(1 * pow(10, -6), 2.5 * pow(10, -6))
         listOfParticles.append(p)
          
     # generate pm 10 particles
@@ -117,7 +115,7 @@ def generateSingleParticle(diamMin, diamMax):
     p = Particle(posX, y0, 0, v_air, diameter, mass)
     return p
 
-ps = generateParticles(1)
+ps = generateParticles(20)
 results = simulateParticles(ps)
 
 print(results)
@@ -125,7 +123,8 @@ print(results)
 for p in ps:
     print(f" {p.posX:.2f} - {p.diameter} - {p.mass}")
     
-plt.scatter(x,y)
-
+plt.scatter(x,y, s=7)
+plt.xlim(-0.5,l+0.5)
+plt.ylim(0,y0+0.2)
     
     
