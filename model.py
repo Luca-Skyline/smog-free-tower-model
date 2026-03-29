@@ -1,3 +1,7 @@
+# Team 11, Section 1
+# Luca DalCanto and Lilja Kiiski
+# March 2026
+
 import math
 import random
 import matplotlib.pyplot as plt
