@@ -2,9 +2,9 @@ import math
 import random
 import matplotlib.pyplot as plt
 
-# for all particles
+# constants, for all particles
 y0 = 2.4 # initial height, meters (also height of chamber)
-l = 1.75 # width of chamber, meters
+l = 0.85 # width of chamber, meters
 v_air = -2.26 # velocity of the air (m/s)
 voltage = 8500 # voltage between plates, volts
 rho_a = 1.225 # air denisty (kg / m^3)
@@ -12,12 +12,17 @@ rho_p = 600 # particle density (kg / m^3)
 vi = 1.39e-5 # air kinematic viscosity 
 g = 9.81 # acceleration of gravity, m / s^2
 q = 1.6e-14 # charge of particle, Coulombs
-A = 1.23 # cross-sectional area of chamber in m^2
-
+smog_concentration = 16e-9 # smog concentration in Hong Kong air, kg / m^3
 dt = 0.000001 # time step
+epsilon_naught = 8.85e-12 # permittivity of free space
+WHO_guideline = 5 # who guideline for smog concentration, μg / m^3
 
+# variables
 x = []
 y = []
+t_list = [0]
+concentration = [smog_concentration * 1e9]
+average_mass = 0 # average mass of a particle
 
 
 def simulateParticles(listOfParticles):    
@@ -44,13 +49,17 @@ def simulateParticles(listOfParticles):
             Fdy = -3 * vi * rho_a * math.pi * particle.diameter * ury
             
             # force of electric field from plate
-            E = q * voltage / l
+            Eplate = q * voltage / l
+            
+            # force of electric field from other particles
+            c = (smog_concentration / average_mass) * ((listSize - captured - escaped) / listSize)
+            Ecloud = (q ** 2) * c * ((2 * particle.posX) - l) / (2 * epsilon_naught)
             
             # force of gravity
             W = -1 * particle.mass * g
             
             # instantaneous acceleration from Newton's second law
-            ax = (Fdx + E) / particle.mass
+            ax = (Fdx + Eplate + Ecloud) / particle.mass
             ay = (Fdy + Ff + W) / particle.mass
             
             
@@ -60,7 +69,7 @@ def simulateParticles(listOfParticles):
             particle.posX += particle.velX * dt
             particle.posY += particle.velY * dt
             
-            if(t % 20 == 0):
+            if(t % 100 == 0):
                 x.append(particle.posX)
                 y.append(particle.posY)
             
@@ -68,12 +77,14 @@ def simulateParticles(listOfParticles):
                 print('captured')
                 captured += 1
                 listOfParticles.remove(particle)
+                t_list.append(t * dt)
+                concentration.append(1e9 * smog_concentration * ((listSize - captured) / listSize))
             elif(particle.posY <= 0):
                 print('escaped')
-                print(particle.velX)
-                print(particle.velY)
                 escaped += 1
                 listOfParticles.remove(particle)
+                t_list.append(t * dt)
+                concentration.append(1e9 * smog_concentration * ((listSize - captured) / listSize))
                 
         # increment time  
         t += 1
@@ -116,6 +127,8 @@ def generateSingleParticle(diamMin, diamMax):
     return p
 
 ps = generateParticles(20)
+for particle in ps:
+    average_mass += particle.mass / len(ps)
 results = simulateParticles(ps)
 
 print(results)
@@ -123,8 +136,15 @@ print(results)
 for p in ps:
     print(f" {p.posX:.2f} - {p.diameter} - {p.mass}")
     
-plt.scatter(x,y, s=7)
-plt.xlim(-0.5,l+0.5)
-plt.ylim(0,y0+0.2)
-    
+plt.scatter(x,y, s=4)
+plt.xlim(-0.05,l+0.05)
+plt.ylim(0,y0+0.2) 
+plt.grid(True, linestyle='--', alpha=0.6)
+plt.show()
+
+plt.plot(t_list,concentration)
+plt.plot([0,t_list[-1]],[WHO_guideline, WHO_guideline])
+plt.show()
+
+
     
