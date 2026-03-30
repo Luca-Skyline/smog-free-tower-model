@@ -8,15 +8,15 @@ import matplotlib.pyplot as plt
 
 # constants, for all particles
 y0 = 2.4 # initial height, meters (also height of chamber)
-l = 0.85 # width of chamber, meters
+l = 0.02 # width of chamber, meters
 v_air = -2.26 # velocity of the air (m/s)
-voltage = 8500 # voltage between plates, volts
-rho_a = 1.225 # air denisty (kg / m^3)
+voltage = 8500 * 5 # voltage between plates, volts
+rho_a = 1.225 # air density (kg / m^3)
 rho_p = 600 # particle density (kg / m^3)
 vi = 1.39e-5 # air kinematic viscosity 
 g = 9.81 # acceleration of gravity, m / s^2
-q = 1.6e-14 # charge of particle, Coulombs
-smog_concentration = 16e-9 # smog concentration in Hong Kong air, kg / m^3
+q = 7e-19 # charge of particle, Coulombs
+smog_concentration = 20e-9 # smog concentration in Hong Kong air, kg / m^3
 dt = 0.000001 # time step
 epsilon_naught = 8.85e-12 # permittivity of free space
 WHO_guideline = 5 # who guideline for smog concentration, μg / m^3
@@ -39,7 +39,7 @@ def simulateParticles(listOfParticles):
     
     while(captured + escaped < listSize):
         
-        print('List size: ', len(listOfParticles))
+        # print('List size: ', len(listOfParticles))
         for particle in listOfParticles[:]:
             # force of buoyancy    
             Ff = (1/6) * math.pi * (rho_a) * g * (particle.diameter ** 3)
@@ -48,7 +48,7 @@ def simulateParticles(listOfParticles):
             urx = particle.velX
             ury = particle.velY - v_air
             
-            # force of form drag   
+            # force of form drag
             Fdx = -3 * vi * rho_a * math.pi * particle.diameter * urx
             Fdy = -3 * vi * rho_a * math.pi * particle.diameter * ury
             
@@ -113,7 +113,7 @@ def generateParticles(totParticles):
 
     # generate pm2.5 particles
     for i in range(0, numPm25):
-        p = generateSingleParticle(1 * pow(10, -6), 2.5 * pow(10, -6))
+        p = generateSingleParticle(0.1 * pow(10, -6), 2.5 * pow(10, -6))
         listOfParticles.append(p)
          
     # generate pm 10 particles
@@ -133,21 +133,31 @@ def generateSingleParticle(diamMin, diamMax):
 ps = generateParticles(20)
 for particle in ps:
     average_mass += particle.mass / len(ps)
+    
+print(average_mass)
+
 results = simulateParticles(ps)
+
 
 print(results)
 
 for p in ps:
     print(f" {p.posX:.2f} - {p.diameter} - {p.mass}")
     
+plt.figure(figsize=(5, 10))
 plt.scatter(x,y, s=4)
-plt.xlim(-0.05,l+0.05)
+plt.xlim(-0.0005,l+0.0005)
 plt.ylim(0,y0+0.2) 
 plt.grid(True, linestyle='--', alpha=0.6)
 plt.show()
 
-plt.plot(t_list,concentration)
-plt.plot([0,t_list[-1]],[WHO_guideline, WHO_guideline])
+plt.figure()
+plt.plot(t_list,concentration, label='Concentration in Tower')
+plt.plot([0,t_list[-1]],[WHO_guideline, WHO_guideline], label='WHO Guideline')
+plt.ylim(0,20.5)
+plt.xlabel('Time (s)')
+plt.ylabel('Pollution Concentration (μg / m^3)')
+plt.legend()
 plt.show()
 
 
